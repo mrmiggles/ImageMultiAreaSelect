@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<meta content="utf-8" http-equiv="encoding">		
+		<link rel="stylesheet" type="text/css" href="main.css">
+ 		<script src="jquery.min.js"></script> 
+
+		 <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+		 <link rel="stylesheet" href="resize_edit.css">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
+
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="bootstrap/js/bootstrap.min.js"></script>	
+		<script src="interact.js"></script>					  
+	</head>
+	
+
+	<body>
+		<div class="row">
+			<div class="col-xs-8">
+				<img id="freckles" class="img-responsive" src="freckles.jpg"/>	
+			</div>
+		</div>
+	</body>
+
+<script type="text/javascript">
+
+$(function(){
+
+interact('.rectangle')
+  .resizable({
+    preserveAspectRatio: true,
+    edges: { left: true, right: true, bottom: true, top: true }
+  })
+  .on('resizemove', function (event) {
+    var target = event.target,
+        x = (parseFloat(target.getAttribute('data-x')) || 0),
+        y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+    // update the element's style
+    target.style.width  = event.rect.width + 'px';
+    target.style.height = event.rect.height + 'px';
+
+    // translate when resizing from top or left edges
+    x += event.deltaRect.left;
+    y += event.deltaRect.top;
+
+    target.style.webkitTransform = target.style.transform =
+        'translate(' + x + 'px,' + y + 'px)';
+
+    target.setAttribute('data-x', x);
+    target.setAttribute('data-y', y);
+    target.textContent = Math.round(event.rect.width) + '×' + Math.round(event.rect.height);
+  });	
+
+	//void ctx.drawImage(image, dx, dy);
+	//void ctx.drawImage(image, dx, dy, dWidth, dHeight);
+	//void ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+		//var c = document.getElementById("myCanvas");
+	    //var ctx = c.getContext("2d");
+	    //ctx.drawImage(img, 550, 550, this.width, this.height, 0, 0, this.width, this.height);
+	    //ctx.drawImage(img, 0,0)
+
+		var rectangles = new Object();
+
+		var img = document.getElementById("freckles");
+		var p = img.parentElement;
+		var canvas = document.createElement("div");
+		canvas.classList.add("canvas")
+		p.appendChild(canvas);
+		canvas.appendChild(img);
+
+		initDraw(canvas);	    
+});
+
+
+
+function initDraw(canvas) {
+    function setMousePosition(e) {
+        var ev = e || window.event; //Moz || IE
+        if (ev.pageX) { //Moz
+            mouse.x = ev.pageX + window.pageXOffset;
+            mouse.y = ev.pageY + window.pageYOffset;
+        } else if (ev.clientX) { //IE
+            mouse.x = ev.clientX + document.body.scrollLeft;
+            mouse.y = ev.clientY + document.body.scrollTop;
+        }
+    };
+
+    var mouse = {
+        x: 0,
+        y: 0,
+        startX: 0,
+        startY: 0
+    };
+    var shapes = new Object();
+    var element = null;
+
+    canvas.onmousemove = function (e) {
+        setMousePosition(e);
+        if (element !== null) {
+
+        	if((Math.abs(mouse.x - mouse.startX)) < canvas.offsetWidth) { //don't go out of picture bounds
+ 	            element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
+	            element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
+	            element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
+	            element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';  
+        	}
+        }
+    }
+
+    canvas.ondblclick = function (e) {
+        if (element !== null) {
+            element = null;
+            canvas.style.cursor = "default";
+            shapes.x1 = mouse.startX;
+            shapes.y1 = mouse.startY;
+            shapes.x2 = mouse.x;
+            shapes.y2 = mouse.y;
+            console.log(shapes);
+
+
+	        //console.log("finished");
+        } else {
+        	console.log(e.target.classList)
+            //console.log("Begin");
+            mouse.startX = mouse.x;
+            mouse.startY = mouse.y;
+
+            element = document.createElement('div');
+            element.className = 'rectangle'
+            element.style.left = mouse.x + 'px';
+            element.style.top = mouse.y + 'px';
+            canvas.appendChild(element)
+            canvas.style.cursor = "crosshair";
+        }
+    }
+}
+
+function resizeBox(box,top, left, width, height) {
+    box.css({
+        top: top + 'px',
+        left: left + 'px',
+        width: width + 'px',
+        height: height + 'px'
+    });
+}
+
+	
+</script>
+</html>

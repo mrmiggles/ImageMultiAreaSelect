@@ -1,0 +1,13 @@
+.canvas {
+	width: inherit;
+    border: 10px solid transparent;
+}
+.rectangle {
+    border: 1px solid #FF0000;
+    position: absolute;
+}
+
+.rectangle:hover{
+    box-shadow: 1px 1px 10px #888888;
+}
+

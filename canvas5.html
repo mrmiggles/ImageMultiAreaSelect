@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<!-- http://jsfiddle.net/m1erickson/Spkhz/
+		http://jsfiddle.net/m1erickson/7uNfW/ //drawing rectangles
+		http://simonsarris.com/blog/510-making-html5-canvas-useful
+	 -->
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<meta content="utf-8" http-equiv="encoding">		
+ 		<script src="jquery.min.js"></script> 
+		 <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+		 <link rel="stylesheet" href="resize_edit.css">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
+
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="bootstrap/js/bootstrap.min.js"></script>	
+        <script src="canvasResize.js"></script>
+	</head>
+	
+
+	<body>
+		<div class="row">
+			<div class="col-xs-8">
+				<img id="freckles" class="img-responsive" src="freckles.jpg"/>	
+			</div>
+			<div class="col-xs-3">
+				<canvas id="preview"></canvas>				
+			</div>			
+		</div>
+	</body>
+
+<script type="text/javascript">
+
+$(function(){
+
+	var img = document.getElementById("freckles");
+
+	/*
+        <img src='freckles.jp' style='display:none' />
+		<div class='drawableDiv'>
+			<canvas height='imgHeight' width='imgWidth'></canvas>
+		</div>
+	*/
+	var imgWidth = ($(img).width())/2;
+	var imgHeight = ($(img).height())/2;
+	var p = img.parentElement;
+	var drawableCanvas = document.createElement("div");
+	drawableCanvas.classList.add("drawableDiv");
+	drawableCanvas.setAttribute("width", imgWidth)
+
+	img.setAttribute("style", "display:none")
+
+	var canvasElement = document.createElement("canvas");
+	canvasElement.setAttribute("width", imgWidth);
+	canvasElement.setAttribute("height", imgHeight);
+
+	p.appendChild(drawableCanvas);
+	drawableCanvas.appendChild(canvasElement);
+
+	var canvasImg = new Image();
+	canvasImg.onload = function(){
+		
+	    // draw the image on the canvas
+	    //ctx.drawImage(canvasImg, 0,0, imgWidth, imgHeight);
+		
+		//pass to canvasResize init2
+		init2(canvasElement, canvasImg)
+	}
+
+	canvasImg.src = img.getAttribute("src");		    
+});
+
+</script>
+</html>

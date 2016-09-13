@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<!-- http://jsfiddle.net/m1erickson/Spkhz/ -->
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<meta content="utf-8" http-equiv="encoding">		
+ 		<script src="jquery.min.js"></script> 
+
+		 <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+		 <link rel="stylesheet" href="resize_edit.css">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
+
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="bootstrap/js/bootstrap.min.js"></script>	
+		<script src="dragresize.js"></script>					  
+	</head>
+	
+
+	<body>
+		<div class="row">
+			<div class="col-xs-8">
+				<img id="freckles" class="img-responsive" src="freckles.jpg"/>	
+			</div>
+		</div>
+	</body>
+
+<script type="text/javascript">
+
+$(function(){
+
+	var rectangles = new Object();
+
+	var img = document.getElementById("freckles");
+	var p = img.parentElement;
+	var canvas = document.createElement("div");
+	canvas.classList.add("canvas")
+	p.appendChild(canvas);
+	canvas.appendChild(img);
+
+	var dragresize = new DragResize('dragresize',
+	 { minWidth: 50, minHeight: 50, minLeft: 20, minTop: 20, maxLeft: 600, maxTop: ($(img).height()) });
+
+	// Optional settings/properties of the DragResize object are:
+	//  enabled: Toggle whether the object is active.
+	//  handles[]: An array of drag handles to use (see the .JS file).
+	//  minWidth, minHeight: Minimum size to which elements are resized (in pixels).
+	//  minLeft, maxLeft, minTop, maxTop: Bounding box (in pixels).
+
+	dragresize.isElement = function(elm)
+	{
+	 if (elm.className && elm.className.indexOf('rectangle') > -1) return true;
+	};
+	dragresize.isHandle = function(elm)
+	{
+	 if (elm.className && elm.className.indexOf('drsMoveHandle') > -1) return true;
+	};
+
+
+	dragresize.ondragfocus = function() { };
+	dragresize.ondragstart = function(isResize) { };
+	dragresize.ondragmove = function(isResize) { };
+	dragresize.ondragend = function(isResize) { };
+	dragresize.ondragblur = function() { };
+
+	dragresize.apply(document);
+
+	initDraw(canvas);	    
+});
+
+
+
+function initDraw(canvas) {
+    function setMousePosition(e) {
+        var ev = e || window.event; //Moz || IE
+        if (ev.pageX) { //Moz
+            mouse.x = ev.pageX + window.pageXOffset;
+            mouse.y = ev.pageY + window.pageYOffset;
+        } else if (ev.clientX) { //IE
+            mouse.x = ev.clientX + document.body.scrollLeft;
+            mouse.y = ev.clientY + document.body.scrollTop;
+        }
+    };
+
+    var mouse = {
+        x: 0,
+        y: 0,
+        startX: 0,
+        startY: 0
+    };
+    var shapes = new Object();
+    var element = null;
+
+    canvas.onmousemove = function (e) {
+        setMousePosition(e);
+        if (element !== null) {
+
+        	if((Math.abs(mouse.x - mouse.startX)) < canvas.offsetWidth) { //don't go out of picture bounds
+ 	            element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
+	            element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
+	            element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
+	            element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';  
+        	}
+        }
+    }
+
+    canvas.ondblclick = function (e) {
+        if (element !== null) {
+            element = null;
+            canvas.style.cursor = "default";
+            shapes.x1 = mouse.startX;
+            shapes.y1 = mouse.startY;
+            shapes.x2 = mouse.x;
+            shapes.y2 = mouse.y;
+            console.log(shapes);
+
+
+	        //console.log("finished");
+        } else {
+        	console.log(e.target.classList)
+            //console.log("Begin");
+            mouse.startX = mouse.x;
+            mouse.startY = mouse.y;
+
+            element = document.createElement('div');
+            element.className = 'rectangle'
+            element.style.left = mouse.x + 'px';
+            element.style.top = mouse.y + 'px';
+            canvas.appendChild(element)
+            canvas.style.cursor = "crosshair";
+        }
+    }
+}	
+</script>
+</html>
