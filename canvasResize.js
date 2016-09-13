@@ -1,4 +1,6 @@
-/* Authored and edited by Miguel Gallegos */
+/* Authored and edited by Miguel Gallegos 
+  started with this guys stuff - http://simonsarris.com/blog/510-making-html5-canvas-useful
+*/
 
 // This is a self-executing function that I added only to stop this
 // new script from interfering with the old one. It's a good idea in general, but not
