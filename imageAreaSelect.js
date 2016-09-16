@@ -485,7 +485,20 @@
 			count++;
 		});
 
-		return allCanvases;
+		this.addNewRect = function(canvasObject, x, y, w, h, fill){
+			var rect = new Box2;
+			rect.x = x;
+			rec.y= y;
+			rect.w = w;
+			rect.h = h;
+			rect.fill = fill;
+			canvasObject.boxes2.push(rect);
+			canvasObject.isValid = false;
+			return;
+		}
+
+		this.annos = allCanvases;
+		return this;
 	}
 	window.onload = function(){
 		window.imas = initialize();
