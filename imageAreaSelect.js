@@ -1,5 +1,42 @@
 (function (window){
 
+	
+	var allCanvases = []; //holds all canvas objects and their boxes
+	var INTERVAL = 20;  // how often, in milliseconds, we check to see if a redraw is needed
+	var isDrag = false;
+	var isResizeDrag = false;
+	var expectResize = -1; // New, will save the # of the selection handle if the mouse is over one.
+	var mx, my; // mouse coordinates
+
+	// The node (if any) being selected.
+	// If in the future we want to select multiple objects, this will get turned into an array
+	var mySel = null;
+
+	// The selection color and width. Right now we have a red selection with a small width
+	var mySelColor = '#CC0000';
+	var mySelWidth = 2;
+	var mySelBoxColor = 'darkred'; // New for selection boxes
+	var mySelBoxSize = 6;
+
+	// New, holds the 8 tiny boxes that will be our selection handles
+	// the selection handles will be in this order:
+	// 0  1  2
+	// 3     4
+	// 5  6  7
+	var selectionHandles = [];
+
+
+	// we use a fake canvas to draw individual shapes for selection testing
+	var ghostcanvas;
+	var gctx; // fake canvas context
+
+	// since we can drag from anywhere in a node
+	// instead of just its x/y corner, we need to save
+	// the offset of the mouse when we start dragging.
+	var offsetx, offsety;
+
+	// Padding and border style widths for mouse offsets
+	var stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop;
 
 	function drawableCanvasObject(canvas, backgroundImage){
 		this.canvas = canvas;
@@ -42,7 +79,7 @@
 	}
 
 	function initializeCanvas(canvasObject){
-		canvas = canvasObject;
+		canvas = canvasObject.canvas;
 		var HEIGHT = canvasObject.height;
 		var WIDTH = canvasObject.width;
 		ctx = canvasObject.ctx;
@@ -66,7 +103,7 @@
 	  canvas.ondblclick = myDblClick;
 	  canvas.onmousemove = myMove;	
 	  
-	  addRect(canvasObject, 260, 70, 60, 65, 'rgb(0, 205, 0, 0.7)');
+	  addRect(canvasObject, 260, 70, 60, 65, 'rgba(0, 205, 0, 0.7)');
 
 	 // set up the selection handle boxes
 	  for (var i = 0; i < 8; i ++) {
@@ -91,7 +128,7 @@
 		// Add stuff you want drawn in the background all the time here
 		/* added by Miguel */
 		if(backImage != 'undefined') {
-		  ctx.drawImage(backImage, 0,0, WIDTH, HEIGHT);
+		  ctx.drawImage(backImage, 0,0, canvasObject.width, canvasObject.height);
 		}
 
 		// draw all boxes
@@ -266,7 +303,7 @@
 	  // havent returned means we have selected nothing
 	  mySel = null;
 	  // clear the ghost canvas for next time
-	  clear(gctx);
+	  clearGhost(gctx);
 	  // invalidate because we might need the selection border to disappear
 	  invalidate(canvasObject);
 	}	
