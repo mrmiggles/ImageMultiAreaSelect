@@ -2,6 +2,7 @@
 
 	
 	var allCanvases = []; //holds all canvas objects and their boxes
+	var canvases = new Object();
 	var INTERVAL = 20;  // how often, in milliseconds, we check to see if a redraw is needed
 	var isDrag = false;
 	var isResizeDrag = false;
@@ -63,6 +64,7 @@
 		canvasElement.setAttribute("width", imgWidth);
 		canvasElement.setAttribute("height", imgHeight);
 		canvasElement.setAttribute("canvpos", canvasIdentifier);
+		canvasElement.setAttribute("parent", img.getAttribute("id"));
 
 		p.appendChild(drawableCanvas);
 		drawableCanvas.appendChild(canvasElement);
@@ -71,6 +73,7 @@
 		canvasImg.onload = function(){
 			var x = new drawableCanvasObject(canvasElement, img);
 			allCanvases.push(x);
+			canvases[img.getAttribute("id")] = x;
 
 			initializeCanvas(x);
 		}
@@ -267,7 +270,7 @@
 	  }
 
 	  var element = e.target;
-	  var canvasObject = allCanvases[parseInt(element.getAttribute("canvpos"))];
+	  var canvasObject = canvases[element.getAttribute("parent")]; //allCanvases[parseInt(element.getAttribute("canvpos"))];
 
 	  if(gctx == null || (ghostcanvas.width != canvasObject.width && ghostcanvas.height != canvasObject.height)){
 	  	ghostcanvas = document.createElement("canvas");
@@ -313,7 +316,7 @@
 	function myMove(e){
 
 		var element = e.target;
-		var canvasObject = allCanvases[parseInt(element.getAttribute("canvpos"))];	
+		var canvasObject = canvases[element.getAttribute("parent")]; //allCanvases[parseInt(element.getAttribute("canvpos"))];
 	  if (isDrag) {
 	    getMouse(e);
 	    
@@ -441,7 +444,7 @@
 	function myDblClick(e) {
 		getMouse(e);
 		var element = e.target;
-		var canvasObject = allCanvases[parseInt(element.getAttribute("canvpos"))];
+		var canvasObject = canvases[element.getAttribute("parent")]; //allCanvases[parseInt(element.getAttribute("canvpos"))];
 
 		// for this method width and height determine the starting X and Y, too.
 		// so I left them as vars in case someone wanted to make them args for something and copy this code
@@ -480,24 +483,35 @@
 	function initialize(){
 		var cList = document.querySelectorAll("img.imas");
 		var count = 0;
+		var imgSrcs = "";
 		[].forEach.call(cList, function(item){
-			createCanvas(item, count);
-			count++;
+			if(item.getAttribute("id") != null){
+				createCanvas(item, count);
+				count++;
+			} else{
+				imgSrcs += " " + item.getAttribute("src");
+			}
+			
 		});
 
-		this.addNewRect = function(canvasObject, x, y, w, h, fill){
-			var rect = new Box2;
-			rect.x = x;
-			rec.y= y;
-			rect.w = w;
-			rect.h = h;
-			rect.fill = fill;
-			canvasObject.boxes2.push(rect);
-			canvasObject.isValid = false;
-			return;
+		this.addNewRect = function(whichCanvasId, x, y, w, h, fill){
+			addRect(canvases[whichCanvasId], x, y, w, h, fill)
 		}
 
-		this.annos = allCanvases;
+		this.getBoxes =  function(whichCanvas){
+			try{
+				return canvases[whichCanvas].boxes2;
+			} catch(e){
+				return null;
+			}
+		}
+
+		this.getAllElements = function(){
+			return canvases;
+		}
+
+		if(imgSrcs != "") console.log("Could not create drawable canvas for these images: " + imgSrcs + ". Images need an id attribute for this library to work");
+		
 		return this;
 	}
 	window.onload = function(){
