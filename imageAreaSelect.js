@@ -1,6 +1,7 @@
 (function (window){
 
-	
+	'use strict';
+		
 	var allCanvases = []; //holds all canvas objects and their boxes
 	var canvases = new Object();
 	var INTERVAL = 20;  // how often, in milliseconds, we check to see if a redraw is needed
@@ -8,10 +9,18 @@
 	var isResizeDrag = false;
 	var expectResize = -1; // New, will save the # of the selection handle if the mouse is over one.
 	var mx, my; // mouse coordinates
+	var posx, posy; // mouse coordinates
 
 	// The node (if any) being selected.
 	// If in the future we want to select multiple objects, this will get turned into an array
 	var mySel = null;
+
+	var activeCanvasIndex;
+	var activeCanvasObject;
+
+	var timeout = null;
+
+	var showingAnnotation = false;
 
 	// The selection color and width. Right now we have a red selection with a small width
 	var mySelColor = '#CC0000';
@@ -38,6 +47,8 @@
 
 	// Padding and border style widths for mouse offsets
 	var stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop;
+
+	var isInitialzed = false;
 
 	function drawableCanvasObject(canvas, backgroundImage){
 		this.canvas = canvas;
@@ -82,10 +93,10 @@
 	}
 
 	function initializeCanvas(canvasObject){
-		canvas = canvasObject.canvas;
+		var canvas = canvasObject.canvas;
 		var HEIGHT = canvasObject.height;
 		var WIDTH = canvasObject.width;
-		ctx = canvasObject.ctx;
+		var ctx = canvasObject.ctx;
 
 		//fixes a problem where double clicking causes text to get selected on the canvas
 		canvas.onselectstart = function () { return false; }
@@ -104,7 +115,8 @@
 	  canvas.onmousedown = myDown;
 	  canvas.onmouseup = myUp;
 	  canvas.ondblclick = myDblClick;
-	  canvas.onmousemove = myMove;	
+	  canvas.onmousemove = myMove;
+	  canvas.onmouseleave = myMouseLeave;	
 	  
 	  addRect(canvasObject, 260, 70, 60, 65, 'rgba(0, 205, 0, 0.7)');
 
@@ -153,12 +165,13 @@
 	}
 
 	//Initialize a new Box, add it, and invalidate the canvas
-	function addRect(canvasObject, x, y, w, h, fill) {
+	function addRect(canvasObject, x, y, w, h, note, fill) {
 	  var rect = new Box2;
 	  rect.x = x;
 	  rect.y = y;
 	  rect.w = w
 	  rect.h = h;
+	  rect.note = note;
 	  rect.fill = fill;
 	  canvasObject.boxes2.push(rect);
 	  invalidate(canvasObject);
@@ -171,6 +184,7 @@
 	  this.w = 1; // default width and height?
 	  this.h = 1;
 	  this.fill = '#444444';
+	  this.note = "";
 	}
 
 	// New methods on the Box class
@@ -259,64 +273,32 @@
 		canvasObject.isValid = false;
 	}
 
-	// Happens when the mouse is clicked in the canvas
-	function myDown(e){
-	  getMouse(e);
-	  
-	  //we are over a selection box
-	  if (expectResize !== -1) {
-	    isResizeDrag = true;
-	    return;
-	  }
+	function checkGhostCanvas(canvasObject){
 
-	  var element = e.target;
-	  var canvasObject = canvases[element.getAttribute("parent")]; //allCanvases[parseInt(element.getAttribute("canvpos"))];
+		if(gctx == null || (ghostcanvas.width != canvasObject.width && ghostcanvas.height != canvasObject.height)){
+			ghostcanvas = document.createElement("canvas");
+			ghostcanvas.height = canvasObject.height;
+			ghostcanvas.width = canvasObject.width;
+			gctx = ghostcanvas.getContext("2d");
+		}
+	}
 
-	  if(gctx == null || (ghostcanvas.width != canvasObject.width && ghostcanvas.height != canvasObject.height)){
-	  	ghostcanvas = document.createElement("canvas");
-	  	ghostcanvas.width = canvasObject.width;
-	  	ghostcanvas.height = canvasObject.height;
-	  	gctx = ghostcanvas.getContext('2d');
-	  }
-	  
-	  clearGhost(canvasObject);
-	  var l = canvasObject.boxes2.length;
-	  for (var i = l-1; i >= 0; i--) {
-	    // draw shape onto ghost context
-	    canvasObject.boxes2[i].draw(gctx, 'black');
-	    
-	    // get image data at the mouse x,y pixel
-	    var imageData = gctx.getImageData(mx, my, 1, 1);
-	    
-	    // if the mouse pixel exists, select and break
-	    if (imageData.data[3] > 0) {
-	      mySel = canvasObject.boxes2[i];
-	      offsetx = mx - mySel.x;
-	      offsety = my - mySel.y;
-	      mySel.x = mx - offsetx;
-	      mySel.y = my - offsety;
-	      isDrag = true;
-	      
-	      invalidate(canvasObject);
-	      clearGhost(canvasObject);
-	      return;
-	    }
-	    
-	  }
-	  // havent returned means we have selected nothing
-	  mySel = null;
-	  // clear the ghost canvas for next time
-	  clearGhost(gctx);
-	  // invalidate because we might need the selection border to disappear
-	  invalidate(canvasObject);
-	}	
-
+	function myMouseLeave(e){
+		clearInterval(timeout);
+		timeout = null;
+	}
 
 	// Happens when the mouse is moving inside the canvas
 	function myMove(e){
 
 		var element = e.target;
 		var canvasObject = canvases[element.getAttribute("parent")]; //allCanvases[parseInt(element.getAttribute("canvpos"))];
+
+		if(timeout == null){
+			timeout = setInterval(function(){myHover(canvasObject)}, 300);
+		}		
+
+
 	  if (isDrag) {
 	    getMouse(e);
 	    
@@ -429,6 +411,105 @@
 	  
 	}
 
+	function myHover(canvasObject){
+		checkGhostCanvas(canvasObject);
+		clearGhost(canvasObject);
+
+		var l = canvasObject.boxes2.length;
+		for(var i=l-1; i >=0; i--){
+			canvasObject.boxes2[i].draw(gctx, "black");
+			var imageData = gctx.getImageData(mx, my, 1,1);
+
+			if(imageData.data[3] > 0){
+				if(!showingAnnotation && canvasObject.boxes2[i].note != ""){
+					annotator.children[1].innerHTML = canvasObject.boxes2[i].note;
+					toggleAnnotationInput("off");
+					positionMenu(annotator);
+					toggleAnnotation("on");
+					toggleAnnotatorWrapperOn();
+					showingAnnotation = true;
+				}
+				return;
+			}
+		}
+
+		if(showingAnnotation){
+			toggleAnnotation("off");
+			toggleAnnotatorWrapperOff();
+			showingAnnotation = false;
+		}
+	}	
+
+	// Happens when the mouse is clicked in the canvas
+	function myDown(e){
+	  getMouse(e);
+	  toggleMenuOff();
+
+	  var isRightMB;
+	  e = e || window.event;
+
+	  if("which" in e){
+	  	isRightMB = e.which == 3;
+	  } else if("button" in e){
+	  	isRightMB = e.button == 2;
+	  }
+	  
+	  //we are over a selection box
+	  if (expectResize !== -1) {
+	    isResizeDrag = true;
+	    return;
+	  }
+
+	  var element = e.target;
+	  var canvasObject = canvases[element.getAttribute("parent")]; //allCanvases[parseInt(element.getAttribute("canvpos"))];
+
+	  checkGhostCanvas(canvasObject);
+	  
+	  clearGhost(canvasObject);
+	  var l = canvasObject.boxes2.length;
+	  for (var i = l-1; i >= 0; i--) {
+	    // draw shape onto ghost context
+	    canvasObject.boxes2[i].draw(gctx, 'black');
+	    
+	    // get image data at the mouse x,y pixel
+	    var imageData = gctx.getImageData(mx, my, 1, 1);
+	    
+	    // if the mouse pixel exists, select and break
+	    if (imageData.data[3] > 0) {
+	      mySel = canvasObject.boxes2[i];
+
+	      if(isRightMB){
+	      	toggleAnnotatorWrapperOff();
+	      	toggleMenuOn();
+	      	positionMenu(menu);
+	      	activeCanvasIndex = i;
+	      	activeCanvasObject = canvasObject;
+	      	return;
+	      } else{
+	      	toggleMenuOff();
+	      }
+
+	      offsetx = mx - mySel.x;
+	      offsety = my - mySel.y;
+	      mySel.x = mx - offsetx;
+	      mySel.y = my - offsety;
+	      isDrag = true;
+	      
+	      invalidate(canvasObject);
+	      clearGhost(canvasObject);
+	      return;
+	    }
+	    
+	  }
+	  // havent returned means we have selected nothing
+	  mySel = null;
+	  // clear the ghost canvas for next time
+	  clearGhost(canvasObject);
+	  // invalidate because we might need the selection border to disappear
+	  invalidate(canvasObject);
+	}	
+
+
 	function myUp(){
 
 	  if(isDrag || isResizeDrag || expectResize > 0){
@@ -475,12 +556,149 @@
 	      offsetY += styleBorderTop;
 
 	      mx = e.pageX - offsetX;
-	      my = e.pageY - offsetY
+	      my = e.pageY - offsetY;
+
+	      posx = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+	      posy = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+	}
+
+	/********************************************
+	* right click menu
+	*
+	*
+	*********************************************
+	*/
+
+	var contextMenuClassName = "context-menu";
+	var contextMenuItemClassName = "context-menu__item";
+	var contextMenuLinkClassName = "context-menu__link";
+	var contextMenuActive = "context-menu--active";
+	var taskItemInContext;
+
+	var menu, menuItems, menuWidth, menuHeight, menuPosition, menuPositionX, menuPositionY;
+	var menuState = 0;
+	var windowWidth, windowHeight;
+	var annotator, annotation_input;
+
+	function keyupListener(){
+		window.onkeyup = function(e){
+			if(e.keyCode === 27){
+				toggleMenuOff();
+			}
+		}
+	}
+
+	function popUpInitializers(){
+
+		menu = document.getElementById("context-menu");
+		annotator = document.getElementById("annotation-wrapper");
+		annotation_input = document.getElementById("annotation_input");
+
+		document.getElementById("add-note").addEventListener("click", function(e){
+			e.preventDefault();
+			e.stopPropagation();
+			activeCanvasObject.boxes2[activeCanvasIndex].note = annotation_input.value;
+			toggleAnnotatorWrapperOff();			
+		});
+
+		document.getElementById("cancel-note").addEventListener("click", function(e){
+			e.preventDefault();
+			e.stopPropagation();
+			toggleAnnotatorWrapperOff();
+		});
+	}
+
+	function resizeListener(){
+		window.onresize = function(e){
+			toggleMenuOff();
+		}
+	}
+
+	function menuItemListeners(){
+		menuItems = menu.querySelectorAll(".context-menu__item");
+
+		menuItems[0].addEventListener("click", function(e){
+			e.preventDefault();
+			if(activeCanvasIndex != null && activeCanvasObject != null){
+				activeCanvasObject.boxes2.splice(activeCanvasIndex, 1);
+				activeCanvasIndex = null;
+				activeCanvasObject = null;
+			}
+			toggleMenuOff();
+		});
+
+		menuItems[1].addEventListener("click", function(e){
+
+			e.preventDefault();
+			toggleMenuOff();
+			toggleAnnotation("off");
+			positionMenu(annotator);
+			toggleAnnotationInput("on");
+			toggleAnnotatorWrapperOn();
+		});
+	}
+
+	function toggleMenuOn(){
+		if(menuState !== 1){
+			menuState = 1;
+			menu.classList.add(contextMenuActive)
+		}
+	}
+
+	function toggleMenuOff(){
+		if(menuState !== 0){
+			menuState = 0;
+			menu.classList.remove(contextMenuActive);
+		}
+	}
+
+	function toggleAnnotatorWrapperOn(){
+		annotator.classList.add("--active");
+	}
+
+	function toggleAnnotatorWrapperOff(){
+		annotator.classList.remove("--active");	
+	}
+
+	function toggleAnnotation(annoSwitch){
+		if(annoSwitch == "on"){
+			annotator.children[1].classList.add("--active");
+		} else{
+			annotator.children[1].classList.remove("--active");
+		}
+	}
+
+	function positionMenu(whichMenu){
+
+		menuWidth = whichMenu.offsetWidth + 4;
+		menuHeight = whichMenu.offsetHeight + 4;
+
+		windowWidth = window.innerWidth;
+		windowHeight = window.innerHeight;
+
+		if((windowWidth - posx) < menuWidth){
+			whichMenu.style.left = windowWidth - menuWidth + "px";
+		} else{
+			whichMenu.style.left = posx + "px";
+		}
+
+		if((windowHeight - posy) < menuHeight){
+			whichMenu.style.top = windowHeight - menuHeight + "px";
+		} else{
+			whichMenu.style.top = posy + "px";
+		}
 	}
 
 
 
+
 	function initialize(){
+
+		document.oncontextmenu = function(e){
+			return false;
+		}
+
+
 		var cList = document.querySelectorAll("img.imas");
 		var count = 0;
 		var imgSrcs = "";
@@ -494,27 +712,58 @@
 			
 		});
 
-		this.addNewRect = function(whichCanvasId, x, y, w, h, fill){
-			addRect(canvases[whichCanvasId], x, y, w, h, fill)
+
+		if(imgSrcs != "") console.log("Could not create drawable canvas for these images: " + imgSrcs + ". Images need an id attribute for this library to work");
+
+		popUpInitializers();
+		keyupListener();
+		resizeListener();
+		menuItemListeners();
+
+		isInitialzed = true;		
+	}
+
+	function define_imas(){
+		this.addNewRect = function(whichCanvasId, x, y, w, h, note, fill){
+			if(!fill) fill = 'rgba(255, 255, 255, 0.2)';
+
+			if(!isInitialzed){
+				setTimeout(function(){ imas.addNewRect(whichCanvasId, x, y, w, h, note, fill)}, 1000);
+			}
+
+			var canvasObject = canvases[whichCanvasId];
+			if(!canvasObject) return false;
+
+			if(!x || !y || !w || !h) return false;
+
+			try{
+				addRect(canvasObject, x, y, w, h, note, fill);
+			} catch(e){
+				console.log(e);
+				return false;
+			}
 		}
 
-		this.getBoxes =  function(whichCanvas){
+		this.getBoxes = function(whichCanvas){
 			try{
 				return canvases[whichCanvas].boxes2;
 			} catch(e){
-				return null;
+				console.log(e);
+				return false;
 			}
 		}
 
 		this.getAllElements = function(){
-			return canvases;
+			return allCanvases;
 		}
-
-		if(imgSrcs != "") console.log("Could not create drawable canvas for these images: " + imgSrcs + ". Images need an id attribute for this library to work");
-		
-		return this;
 	}
 	window.onload = function(){
-		window.imas = initialize();
+		initialize();
+	}
+
+	if(typeof (imas) === 'undefined'){
+		window.imas = new define_imas();
+	} else{
+		console.log("imas is already defined globally")
 	}
 })(window)

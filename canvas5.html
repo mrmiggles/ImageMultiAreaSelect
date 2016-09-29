@@ -29,6 +29,34 @@
 				<canvas id="preview"></canvas>				
 			</div>			
 		</div>
+
+  <nav id="context-menu" class="context-menu">
+    <ul class="context-menu__items">
+       <li class="context-menu__item">
+        <a href="#" class="context-menu__link"><i class="fa fa-times"></i> Delete Task</a>
+      </li>   	
+      <li class="context-menu__item">
+        <a href="#" class="context-menu__link"><i class="fa fa-eye"></i> Add Annotation</a>
+      </li>
+    </ul>
+  </nav>
+<div id="annotation-wrapper" class="annotation">
+	<div class="annotation-input">
+		<h3>Add Note</h3>
+		<textarea id="annotation-input"></textarea>
+		<div class="annotation-buttons">
+			<button id="add-note" class="annotation-button btn btn-default"></button>
+			<button id="cancel-note" class="annotation-button btn btn-default"></button>
+		</div>
+	</div>
+	<div class="annotation-text" id="annotation-text"></div>
+</div>	
+
+<script type="text/javascript">
+	$(function() {
+		console.log(imas)
+	});
+</script>	
 	</body>
 
 </html>
