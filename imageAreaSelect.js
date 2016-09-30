@@ -118,7 +118,7 @@
 	  canvas.onmousemove = myMove;
 	  canvas.onmouseleave = myMouseLeave;	
 	  
-	  addRect(canvasObject, 260, 70, 60, 65, 'rgba(0, 205, 0, 0.7)');
+	  addRect(canvasObject, 260, 70, 60, 65, '', 'rgba(0, 205, 0, 0.7)');
 
 	 // set up the selection handle boxes
 	  for (var i = 0; i < 8; i ++) {
@@ -486,6 +486,7 @@
 	      	activeCanvasObject = canvasObject;
 	      	return;
 	      } else{
+	      	toggleAnnotatorWrapperOff();
 	      	toggleMenuOff();
 	      }
 
@@ -501,6 +502,10 @@
 	    }
 	    
 	  }
+
+	  
+	  toggleAnnotatorWrapperOff();
+	  toggleMenuOff();
 	  // havent returned means we have selected nothing
 	  mySel = null;
 	  // clear the ghost canvas for next time
@@ -532,7 +537,7 @@
 		var width = 20;
 		var height = 20;
 
-		addRect(canvasObject, mx - (width / 2), my - (height / 2), width, height, 'rgba(255,255,255,0.2)');
+		addRect(canvasObject, mx - (width / 2), my - (height / 2), width, height, '', 'rgba(255,255,255,0.2)');
 	}
 
 	// Sets mx,my to the mouse position relative to the canvas
@@ -592,7 +597,7 @@
 
 		menu = document.getElementById("context-menu");
 		annotator = document.getElementById("annotation-wrapper");
-		annotation_input = document.getElementById("annotation_input");
+		annotation_input = document.getElementById("annotation-input");
 
 		document.getElementById("add-note").addEventListener("click", function(e){
 			e.preventDefault();
@@ -617,9 +622,10 @@
 	function menuItemListeners(){
 		menuItems = menu.querySelectorAll(".context-menu__item");
 
+		//when delete is pressed
 		menuItems[0].addEventListener("click", function(e){
 			e.preventDefault();
-			if(activeCanvasIndex != null && activeCanvasObject != null){
+			if(activeCanvasIndex != null && activeCanvasObject != null) {
 				activeCanvasObject.boxes2.splice(activeCanvasIndex, 1);
 				activeCanvasIndex = null;
 				activeCanvasObject = null;
@@ -627,6 +633,7 @@
 			toggleMenuOff();
 		});
 
+		//when add note is pressed
 		menuItems[1].addEventListener("click", function(e){
 
 			e.preventDefault();
@@ -667,6 +674,14 @@
 			annotator.children[1].classList.remove("--active");
 		}
 	}
+
+	function toggleAnnotationInput(annoSwitch){
+		if(annoSwitch == "on"){
+			annotator.children[0].classList.add("--active");
+		} else{
+			annotator.children[0].classList.remove("--active");
+		}
+	}	
 
 	function positionMenu(whichMenu){
 

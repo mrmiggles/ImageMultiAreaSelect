@@ -6,7 +6,6 @@
 		http://simonsarris.com/blog/510-making-html5-canvas-useful
 	 -->
 		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
-		<meta content="utf-8" http-equiv="encoding">		
  		<script src="jquery.min.js"></script> 
 		 <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
 		 <link rel="stylesheet" href="resize_edit.css">
@@ -23,13 +22,28 @@
 	<body>
 		<div class="row">
 			<div class="col-xs-8">
-				<img id="freckles" class="img-responsive imas" src="freckles.jpg"/>	
+				<img id="freckles" class="img-responsive imas" src="freckles1.jpg"/>	
 			</div>
 			<div class="col-xs-3">
 				<canvas id="preview"></canvas>				
 			</div>			
 		</div>
-
+		<div class="row">
+			<div class="col-xs-8">
+				<img id="freckles1" class="img-responsive imas" src="freckles1.jpg"/>	
+			</div>
+			<div class="col-xs-3">
+				<canvas id="preview"></canvas>				
+			</div>			
+		</div>
+		<div class="row">
+			<div class="col-xs-8">
+				<img id="freckles2" class="img-responsive imas" src="freckles1.jpg"/>	
+			</div>
+			<div class="col-xs-3">
+				<canvas id="preview"></canvas>				
+			</div>			
+		</div>		
   <nav id="context-menu" class="context-menu">
     <ul class="context-menu__items">
        <li class="context-menu__item">
@@ -42,11 +56,10 @@
   </nav>
 <div id="annotation-wrapper" class="annotation">
 	<div class="annotation-input">
-		<h3>Add Note</h3>
-		<textarea id="annotation-input"></textarea>
+		<textarea id="annotation-input" placeholder="Add Note"></textarea>
 		<div class="annotation-buttons">
-			<button id="add-note" class="annotation-button btn btn-default"></button>
-			<button id="cancel-note" class="annotation-button btn btn-default"></button>
+			<button id="add-note" class="annotation-button btn btn-default">Save</button>
+			<button id="cancel-note" class="annotation-button btn btn-default"> Cancel </button>
 		</div>
 	</div>
 	<div class="annotation-text" id="annotation-text"></div>
@@ -54,7 +67,7 @@
 
 <script type="text/javascript">
 	$(function() {
-		console.log(imas)
+		imas.addNewRect("freckles2", 10, 10, 40, 40, "a note");
 	});
 </script>	
 	</body>
